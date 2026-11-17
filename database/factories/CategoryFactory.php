@@ -20,4 +20,18 @@ class CategoryFactory extends Factory
             'is_active' => true,
         ];
     }
+
+    public function income(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'type' => CategoryType::Income,
+        ]);
+    }
+
+    public function expense(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'type' => CategoryType::Expense,
+        ]);
+    }
 }

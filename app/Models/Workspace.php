@@ -64,6 +64,12 @@ class Workspace extends Model
         return $this->hasMany(Category::class);
     }
 
+    /** @return HasMany<Transaction, $this> */
+    public function transactions(): HasMany
+    {
+        return $this->hasMany(Transaction::class);
+    }
+
     public function membershipFor(User $user): ?WorkspaceMember
     {
         return $this->members()->where('user_id', $user->id)->first();

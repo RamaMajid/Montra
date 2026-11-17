@@ -13,6 +13,7 @@ export type AccountItem = {
     name: string;
     type: 'bank' | 'e_wallet' | 'cash' | 'savings' | 'other';
     initial_balance: string;
+    current_balance?: string;
     institution: string | null;
     description: string | null;
     color: string | null;
@@ -295,9 +296,16 @@ export default function AccountsIndex({ accounts, canManage }: Props) {
 
                                         <div className="mt-4">
                                             <p className="text-xs text-muted-foreground">
-                                                Initial Balance
+                                                Balance
                                             </p>
                                             <p className="text-xl font-semibold tracking-tight text-foreground">
+                                                {formatIdr(
+                                                    acc.current_balance ??
+                                                        acc.initial_balance,
+                                                )}
+                                            </p>
+                                            <p className="mt-0.5 text-xs text-muted-foreground">
+                                                Initial:{' '}
                                                 {formatIdr(acc.initial_balance)}
                                             </p>
                                         </div>

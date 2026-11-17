@@ -1,6 +1,12 @@
 import { Link, usePage } from '@inertiajs/react';
 import { WorkspaceSwitcher } from '@/components/workspace-switcher';
-import { CreditCard, FolderTree, LayoutGrid, Users } from 'lucide-react';
+import {
+    ArrowLeftRight,
+    CreditCard,
+    FolderTree,
+    LayoutGrid,
+    Users,
+} from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -22,6 +28,11 @@ const mainNavItems: NavItem[] = [
         title: 'Dashboard',
         href: dashboard(),
         icon: LayoutGrid,
+    },
+    {
+        title: 'Transactions',
+        href: '/transactions',
+        icon: ArrowLeftRight,
     },
     {
         title: 'Workspaces',

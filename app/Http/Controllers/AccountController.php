@@ -6,6 +6,7 @@ use App\Actions\ManageAccount;
 use App\Http\Requests\AccountRequest;
 use App\Models\Account;
 use App\Models\Workspace;
+use App\Services\AccountBalanceService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -24,9 +25,10 @@ class AccountController extends Controller
         return $workspace;
     }
 
-    public function index(Request $request): Response
+    public function index(Request $request, AccountBalanceService $balanceService): Response
     {
         $workspace = $this->activeWorkspace($request);
+        $balances = $balanceService->getBalancesForWorkspace($workspace);
         $accounts = $workspace->accounts()
             ->orderBy('is_active', 'desc')
             ->orderBy('name')
@@ -36,6 +38,7 @@ class AccountController extends Controller
                 'name' => $acc->name,
                 'type' => $acc->type->value,
                 'initial_balance' => (string) $acc->initial_balance,
+                'current_balance' => (string) ($balances[$acc->id] ?? $acc->initial_balance),
                 'institution' => $acc->institution,
                 'description' => $acc->description,
                 'color' => $acc->color,

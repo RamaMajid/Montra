@@ -3,6 +3,7 @@
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\ActiveWorkspaceController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\WorkspaceController;
 use App\Http\Controllers\WorkspaceInvitationController;
 use App\Http\Controllers\WorkspaceMemberController;
@@ -48,6 +49,12 @@ Route::middleware(['auth', 'verified', EnsureActiveWorkspace::class])->group(fun
     Route::put('categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
     Route::post('categories/{category}/archive', [CategoryController::class, 'archive'])->name('categories.archive');
     Route::post('categories/{category}/restore', [CategoryController::class, 'restore'])->name('categories.restore');
+
+    // Transactions
+    Route::get('transactions', [TransactionController::class, 'index'])->name('transactions.index');
+    Route::post('transactions', [TransactionController::class, 'store'])->name('transactions.store');
+    Route::put('transactions/{transaction}', [TransactionController::class, 'update'])->name('transactions.update');
+    Route::delete('transactions/{transaction}', [TransactionController::class, 'destroy'])->name('transactions.destroy');
 });
 
 require __DIR__.'/settings.php';
