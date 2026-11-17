@@ -1,6 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import { WorkspaceSwitcher } from '@/components/workspace-switcher';
-import { LayoutGrid, Users } from 'lucide-react';
+import { CreditCard, FolderTree, LayoutGrid, Users } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -27,6 +27,16 @@ const mainNavItems: NavItem[] = [
         title: 'Workspaces',
         href: '/workspaces',
         icon: Users,
+    },
+    {
+        title: 'Accounts',
+        href: '/accounts',
+        icon: CreditCard,
+    },
+    {
+        title: 'Categories',
+        href: '/categories',
+        icon: FolderTree,
     },
 ];
 

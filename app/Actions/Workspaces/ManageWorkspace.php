@@ -27,6 +27,7 @@ class ManageWorkspace
                 'description' => $data['description'] ?? null,
             ]);
             $workspace->members()->create(['user_id' => $user->id, 'role' => 'owner', 'joined_at' => now()]);
+            app(InitializeDefaultCategories::class)->for($workspace);
 
             return $workspace;
         });

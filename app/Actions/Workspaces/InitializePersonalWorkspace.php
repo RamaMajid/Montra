@@ -17,6 +17,7 @@ class InitializePersonalWorkspace
                 ['name' => $user->name.'’s personal workspace'],
             );
             $workspace->members()->firstOrCreate(['user_id' => $user->id], ['role' => 'owner', 'joined_at' => now()]);
+            app(InitializeDefaultCategories::class)->for($workspace);
 
             return $workspace;
         });

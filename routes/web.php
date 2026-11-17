@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\AccountController;
 use App\Http\Controllers\ActiveWorkspaceController;
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\WorkspaceController;
 use App\Http\Controllers\WorkspaceInvitationController;
 use App\Http\Controllers\WorkspaceMemberController;
@@ -32,6 +34,20 @@ Route::middleware(['auth', 'verified', EnsureActiveWorkspace::class])->group(fun
     Route::delete('workspaces/{workspace}/invitations/{invitation}', [WorkspaceInvitationController::class, 'destroy'])->name('workspaces.invitations.destroy');
     Route::get('invitations/{token}/accept', [WorkspaceInvitationController::class, 'show'])->name('invitations.accept');
     Route::post('invitations/{token}/accept', [WorkspaceInvitationController::class, 'accept'])->middleware('throttle:10,1')->name('invitations.confirm');
+
+    // Accounts
+    Route::get('accounts', [AccountController::class, 'index'])->name('accounts.index');
+    Route::post('accounts', [AccountController::class, 'store'])->name('accounts.store');
+    Route::put('accounts/{account}', [AccountController::class, 'update'])->name('accounts.update');
+    Route::post('accounts/{account}/archive', [AccountController::class, 'archive'])->name('accounts.archive');
+    Route::post('accounts/{account}/restore', [AccountController::class, 'restore'])->name('accounts.restore');
+
+    // Categories
+    Route::get('categories', [CategoryController::class, 'index'])->name('categories.index');
+    Route::post('categories', [CategoryController::class, 'store'])->name('categories.store');
+    Route::put('categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
+    Route::post('categories/{category}/archive', [CategoryController::class, 'archive'])->name('categories.archive');
+    Route::post('categories/{category}/restore', [CategoryController::class, 'restore'])->name('categories.restore');
 });
 
 require __DIR__.'/settings.php';
