@@ -70,6 +70,12 @@ class Workspace extends Model
         return $this->hasMany(Transaction::class);
     }
 
+    /** @return HasMany<ImportBatch, $this> */
+    public function importBatches(): HasMany
+    {
+        return $this->hasMany(ImportBatch::class);
+    }
+
     public function membershipFor(User $user): ?WorkspaceMember
     {
         return $this->members()->where('user_id', $user->id)->first();

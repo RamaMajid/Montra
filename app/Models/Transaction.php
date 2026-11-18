@@ -50,6 +50,7 @@ class Transaction extends Model
         'category_id',
         'notes',
         'source',
+        'import_batch_id',
         'created_by',
     ];
 
@@ -98,5 +99,11 @@ class Transaction extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /** @return BelongsTo<ImportBatch, $this> */
+    public function importBatch(): BelongsTo
+    {
+        return $this->belongsTo(ImportBatch::class, 'import_batch_id');
     }
 }

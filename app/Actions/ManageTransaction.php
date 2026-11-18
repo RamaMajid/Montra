@@ -114,7 +114,8 @@ class ManageTransaction
                 $transaction = new Transaction;
                 $transaction->workspace_id = $workspace->id;
                 $transaction->created_by = $user->id;
-                $transaction->source = 'manual';
+                $transaction->source = $data['source'] ?? 'manual';
+                $transaction->import_batch_id = $data['import_batch_id'] ?? null;
             }
 
             $transaction->type = $type;

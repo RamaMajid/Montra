@@ -4,6 +4,7 @@ import {
     ArrowLeftRight,
     CreditCard,
     FolderTree,
+    FileUp,
     LayoutGrid,
     Users,
 } from 'lucide-react';
@@ -33,6 +34,11 @@ const mainNavItems: NavItem[] = [
         title: 'Transactions',
         href: '/transactions',
         icon: ArrowLeftRight,
+    },
+    {
+        title: 'Imports',
+        href: '/imports',
+        icon: FileUp,
     },
     {
         title: 'Workspaces',

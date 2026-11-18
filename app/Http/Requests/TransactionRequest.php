@@ -50,14 +50,20 @@ class TransactionRequest extends FormRequest
      */
     public function rules(): array
     {
+        return self::transactionRules($this->input('type'));
+    }
+
+    /** @return array<string, mixed> */
+    public static function transactionRules(mixed $type): array
+    {
         $amount = function (string $attribute, mixed $value, Closure $fail): void {
             if ((! is_string($value) && ! is_int($value)) || ! preg_match('/^[1-9][0-9]*$/D', (string) $value) || filter_var($value, FILTER_VALIDATE_INT) === false) {
                 $fail('Enter a positive whole Rupiah amount within the signed 64-bit range.');
             }
         };
 
-        $isIncomeOrExpense = in_array($this->input('type'), ['income', 'expense'], true);
-        $isTransfer = $this->input('type') === 'transfer';
+        $isIncomeOrExpense = in_array($type, ['income', 'expense'], true);
+        $isTransfer = $type === 'transfer';
 
         return [
             'type' => ['required', Rule::in(['income', 'expense', 'transfer'])],

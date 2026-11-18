@@ -3,6 +3,7 @@
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\ActiveWorkspaceController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\ImportBatchController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\WorkspaceController;
 use App\Http\Controllers\WorkspaceInvitationController;
@@ -49,6 +50,13 @@ Route::middleware(['auth', 'verified', EnsureActiveWorkspace::class])->group(fun
     Route::put('categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
     Route::post('categories/{category}/archive', [CategoryController::class, 'archive'])->name('categories.archive');
     Route::post('categories/{category}/restore', [CategoryController::class, 'restore'])->name('categories.restore');
+
+    // Imports
+    Route::get('imports', [ImportBatchController::class, 'index'])->name('imports.index');
+    Route::post('imports', [ImportBatchController::class, 'store'])->name('imports.store');
+    Route::get('imports/{importBatch}', [ImportBatchController::class, 'show'])->name('imports.show');
+    Route::put('imports/{importBatch}/preview', [ImportBatchController::class, 'preview'])->name('imports.preview');
+    Route::post('imports/{importBatch}/confirm', [ImportBatchController::class, 'confirm'])->name('imports.confirm');
 
     // Transactions
     Route::get('transactions', [TransactionController::class, 'index'])->name('transactions.index');
