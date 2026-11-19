@@ -19,10 +19,13 @@ class BudgetProgressService
             ->groupBy('category_id')
             ->pluck('actual', 'category_id');
 
-        $actual = 0;
-        foreach ($totals as $total) {
-            $actual = AccountBalanceService::add($actual, AccountBalanceService::parseBigInt($total));
-        }
+        $actual = DB::table('transactions')
+            ->where('workspace_id', $budget->workspace_id)
+            ->where('type', 'expense')
+            ->whereNull('deleted_at')
+            ->whereBetween('transaction_date', [$budget->period_start->format('Y-m-d'), $budget->period_end->format('Y-m-d')])
+            ->sum('amount');
+        $actual = AccountBalanceService::parseBigInt($actual);
 
         return [
             'actual_amount' => (string) $actual,
