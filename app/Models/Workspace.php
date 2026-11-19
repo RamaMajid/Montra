@@ -82,6 +82,18 @@ class Workspace extends Model
         return $this->hasMany(Budget::class);
     }
 
+    /** @return HasMany<SavingsGoal, $this> */
+    public function savingsGoals(): HasMany
+    {
+        return $this->hasMany(SavingsGoal::class);
+    }
+
+    /** @return HasMany<FinancialInsight, $this> */
+    public function insights(): HasMany
+    {
+        return $this->hasMany(FinancialInsight::class);
+    }
+
     public function membershipFor(User $user): ?WorkspaceMember
     {
         return $this->members()->where('user_id', $user->id)->first();

@@ -6,7 +6,10 @@ use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\GoalContributionController;
 use App\Http\Controllers\ImportBatchController;
+use App\Http\Controllers\IntelligenceController;
+use App\Http\Controllers\SavingsGoalController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\WorkspaceController;
 use App\Http\Controllers\WorkspaceInvitationController;
@@ -73,6 +76,23 @@ Route::middleware(['auth', 'verified', EnsureActiveWorkspace::class])->group(fun
     Route::post('transactions', [TransactionController::class, 'store'])->name('transactions.store');
     Route::put('transactions/{transaction}', [TransactionController::class, 'update'])->name('transactions.update');
     Route::delete('transactions/{transaction}', [TransactionController::class, 'destroy'])->name('transactions.destroy');
+
+    // Savings Goals
+    Route::get('savings-goals', [SavingsGoalController::class, 'index'])->name('savings-goals.index');
+    Route::post('savings-goals', [SavingsGoalController::class, 'store'])->name('savings-goals.store');
+    Route::get('savings-goals/{savings_goal}', [SavingsGoalController::class, 'show'])->name('savings-goals.show');
+    Route::put('savings-goals/{savings_goal}', [SavingsGoalController::class, 'update'])->name('savings-goals.update');
+    Route::post('savings-goals/{savings_goal}/archive', [SavingsGoalController::class, 'archive'])->name('savings-goals.archive');
+
+    // Goal Contributions
+    Route::post('savings-goals/{savings_goal}/contributions', [GoalContributionController::class, 'store'])->name('savings-goals.contributions.store');
+    Route::put('savings-goals/{savings_goal}/contributions/{contribution}', [GoalContributionController::class, 'update'])->name('savings-goals.contributions.update');
+    Route::delete('savings-goals/{savings_goal}/contributions/{contribution}', [GoalContributionController::class, 'destroy'])->name('savings-goals.contributions.destroy');
+
+    // Intelligence
+    Route::get('intelligence', [IntelligenceController::class, 'index'])->name('intelligence.index');
+    Route::patch('intelligence/{insight}/read', [IntelligenceController::class, 'markAsRead'])->name('intelligence.read');
+    Route::post('intelligence/read-all', [IntelligenceController::class, 'markAllAsRead'])->name('intelligence.read-all');
 });
 
 require __DIR__.'/settings.php';

@@ -9,3 +9,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('imports:cleanup')->daily();
+Schedule::command('montra:generate-insights')->daily();
