@@ -6,6 +6,7 @@ import {
     FolderTree,
     FileUp,
     LayoutGrid,
+    PiggyBank,
     Users,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
@@ -49,6 +50,11 @@ const mainNavItems: NavItem[] = [
         title: 'Accounts',
         href: '/accounts',
         icon: CreditCard,
+    },
+    {
+        title: 'Budgets',
+        href: '/budgets',
+        icon: PiggyBank,
     },
     {
         title: 'Categories',

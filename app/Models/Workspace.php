@@ -76,6 +76,12 @@ class Workspace extends Model
         return $this->hasMany(ImportBatch::class);
     }
 
+    /** @return HasMany<Budget, $this> */
+    public function budgets(): HasMany
+    {
+        return $this->hasMany(Budget::class);
+    }
+
     public function membershipFor(User $user): ?WorkspaceMember
     {
         return $this->members()->where('user_id', $user->id)->first();

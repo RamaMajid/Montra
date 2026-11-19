@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\ActiveWorkspaceController;
+use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ImportBatchController;
 use App\Http\Controllers\TransactionController;
@@ -50,6 +51,12 @@ Route::middleware(['auth', 'verified', EnsureActiveWorkspace::class])->group(fun
     Route::put('categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
     Route::post('categories/{category}/archive', [CategoryController::class, 'archive'])->name('categories.archive');
     Route::post('categories/{category}/restore', [CategoryController::class, 'restore'])->name('categories.restore');
+
+    // Budgets
+    Route::get('budgets', [BudgetController::class, 'index'])->name('budgets.index');
+    Route::post('budgets', [BudgetController::class, 'store'])->name('budgets.store');
+    Route::put('budgets/{budget}', [BudgetController::class, 'update'])->name('budgets.update');
+    Route::post('budgets/{budget}/archive', [BudgetController::class, 'archive'])->name('budgets.archive');
 
     // Imports
     Route::get('imports', [ImportBatchController::class, 'index'])->name('imports.index');

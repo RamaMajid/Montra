@@ -54,4 +54,10 @@ class Category extends Model
     {
         return $this->hasMany(Transaction::class);
     }
+
+    /** @return HasMany<BudgetCategory, $this> */
+    public function budgetCategories(): HasMany
+    {
+        return $this->hasMany(BudgetCategory::class);
+    }
 }
