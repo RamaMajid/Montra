@@ -2,8 +2,10 @@
 
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\ActiveWorkspaceController;
+use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ImportBatchController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\WorkspaceController;
@@ -15,7 +17,8 @@ use Illuminate\Support\Facades\Route;
 Route::inertia('/', 'welcome')->name('home');
 
 Route::middleware(['auth', 'verified', EnsureActiveWorkspace::class])->group(function () {
-    Route::inertia('dashboard', 'dashboard')->name('dashboard');
+    Route::get('dashboard', DashboardController::class)->name('dashboard');
+    Route::get('analytics', AnalyticsController::class)->name('analytics');
 
     // Workspaces
     Route::get('workspaces', [WorkspaceController::class, 'index'])->name('workspaces.index');

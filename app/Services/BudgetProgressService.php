@@ -3,21 +3,26 @@
 namespace App\Services;
 
 use App\Models\Budget;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class BudgetProgressService
 {
-    /** @return array<string, mixed> */
-    public function calculate(Budget $budget): array
+    /**
+     * @param  array<int, int|string>|null  $preloadedTotals
+     * @return array<string, mixed>
+     */
+    public function calculate(Budget $budget, ?array $preloadedTotals = null): array
     {
-        $totals = DB::table('transactions')
+        $totals = $preloadedTotals ?? DB::table('transactions')
             ->selectRaw('category_id, COALESCE(SUM(amount), 0) AS actual')
             ->where('workspace_id', $budget->workspace_id)
             ->where('type', 'expense')
             ->whereNull('deleted_at')
             ->whereBetween('transaction_date', [$budget->period_start->format('Y-m-d'), $budget->period_end->format('Y-m-d')])
             ->groupBy('category_id')
-            ->pluck('actual', 'category_id');
+            ->pluck('actual', 'category_id')
+            ->all();
 
         $actual = 0;
         foreach ($totals as $total) {
@@ -44,6 +49,49 @@ class BudgetProgressService
                 ];
             })->values()->all(),
         ];
+    }
+
+    /**
+     * Batch-calculate progress for multiple budgets in the same workspace using one query.
+     *
+     * @param  Collection<int, Budget>  $budgets
+     * @return array<int, array<string, mixed>>
+     */
+    public function calculateMany(Collection $budgets): array
+    {
+        if ($budgets->isEmpty()) {
+            return [];
+        }
+
+        $first = $budgets->first();
+        $minStart = $budgets->min(fn (Budget $b) => $b->period_start->format('Y-m-d'));
+        $maxEnd = $budgets->max(fn (Budget $b) => $b->period_end->format('Y-m-d'));
+
+        $monthExpr = DB::connection()->getDriverName() === 'sqlite'
+            ? "strftime('%Y-%m', transaction_date)"
+            : "TO_CHAR(transaction_date, 'YYYY-MM')";
+
+        $rows = DB::table('transactions')
+            ->selectRaw("{$monthExpr} as month_key, category_id, COALESCE(SUM(amount), 0) AS actual")
+            ->where('workspace_id', $first->workspace_id)
+            ->where('type', 'expense')
+            ->whereNull('deleted_at')
+            ->whereBetween('transaction_date', [$minStart, $maxEnd])
+            ->groupBy('month_key', 'category_id')
+            ->get();
+
+        $totalsByMonth = [];
+        foreach ($rows as $row) {
+            $totalsByMonth[(string) $row->month_key][(int) $row->category_id] = $row->actual;
+        }
+
+        $result = [];
+        foreach ($budgets as $budget) {
+            $monthKey = $budget->period_start->format('Y-m');
+            $result[$budget->id] = $this->calculate($budget, $totalsByMonth[$monthKey] ?? []);
+        }
+
+        return $result;
     }
 
     private function percentage(int $actual, int $budget): ?string
