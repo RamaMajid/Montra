@@ -25,6 +25,14 @@ class ManageBudget
                 $data['workspace_id'] = $workspace->id;
                 $data['created_by'] = $budget !== null ? $budget->created_by : $user->id;
                 $data['status'] = $budget !== null ? $budget->status : 'active';
+                $duplicate = $workspace->budgets()
+                    ->where('status', 'active')
+                    ->where('period_start', $data['period_start'])
+                    ->when($budget !== null, fn ($query) => $query->whereKeyNot($budget->id))
+                    ->exists();
+                if ($duplicate) {
+                    throw ValidationException::withMessages(['period_start' => 'An active budget already exists for this workspace and month.']);
+                }
                 $budget = $budget
                     ? $workspace->budgets()->whereKey($budget->id)->lockForUpdate()->firstOrFail()
                     : $workspace->budgets()->create($data);
