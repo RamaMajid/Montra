@@ -12,3 +12,15 @@ export type NavItem = {
     icon?: LucideIcon | null;
     isActive?: boolean;
 };
+
+/** Nav item that may point at a page shipped in a later frontend phase. */
+export type NavGroupItem = Omit<NavItem, 'href'> & {
+    href?: NonNullable<InertiaLinkProps['href']>;
+    disabled?: boolean;
+    hint?: string;
+};
+
+export type NavGroup = {
+    label: string;
+    items: NavGroupItem[];
+};

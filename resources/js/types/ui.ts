@@ -1,9 +1,20 @@
 import type { ReactNode } from 'react';
 import type { BreadcrumbItem } from '@/types/navigation';
 
+export type WorkspaceSummary = {
+    id: number;
+    name: string;
+    type: string;
+    role: string;
+    owner_id?: number;
+};
+
 export type AppLayoutProps = {
     children: ReactNode;
     breadcrumbs?: BreadcrumbItem[];
+    title?: string;
+    description?: string;
+    actions?: ReactNode;
 };
 
 export type AppVariant = 'header' | 'sidebar';

@@ -1,18 +1,10 @@
 import { Link, usePage } from '@inertiajs/react';
-import { WorkspaceSwitcher } from '@/components/workspace-switcher';
-import {
-    ArrowLeftRight,
-    CreditCard,
-    FolderTree,
-    FileUp,
-    LayoutGrid,
-    PiggyBank,
-    Users,
-} from 'lucide-react';
 import AppLogo from '@/components/app-logo';
+import { navigationGroups } from '@/components/navigation';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
+import { WorkspaceSwitcher } from '@/components/workspace-switcher';
 import {
     Sidebar,
     SidebarContent,
@@ -25,57 +17,30 @@ import {
 import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';
 
-const mainNavItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
-    },
-    {
-        title: 'Transactions',
-        href: '/transactions',
-        icon: ArrowLeftRight,
-    },
-    {
-        title: 'Imports',
-        href: '/imports',
-        icon: FileUp,
-    },
-    {
-        title: 'Workspaces',
-        href: '/workspaces',
-        icon: Users,
-    },
-    {
-        title: 'Accounts',
-        href: '/accounts',
-        icon: CreditCard,
-    },
-    {
-        title: 'Budgets',
-        href: '/budgets',
-        icon: PiggyBank,
-    },
-    {
-        title: 'Categories',
-        href: '/categories',
-        icon: FolderTree,
-    },
-];
-
 const footerNavItems: NavItem[] = [];
+
+type Workspace = { id: number; name: string; type: string; role: string };
 
 export function AppSidebar() {
     const { workspaces, activeWorkspace } = usePage<{
-        workspaces: Array<{ id: number; name: string; type: string }>;
-        activeWorkspace: { id: number } | null;
+        workspaces: Workspace[];
+        activeWorkspace: Workspace | null;
     }>().props;
+
     return (
-        <Sidebar collapsible="icon" variant="inset">
-            <SidebarHeader>
+        <Sidebar
+            collapsible="icon"
+            variant="inset"
+            className="border-sidebar-border"
+        >
+            <SidebarHeader className="p-3">
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" asChild>
+                        <SidebarMenuButton
+                            size="lg"
+                            asChild
+                            className="hover:bg-transparent"
+                        >
                             <Link href={dashboard()} prefetch>
                                 <AppLogo />
                             </Link>
@@ -84,15 +49,15 @@ export function AppSidebar() {
                 </SidebarMenu>
             </SidebarHeader>
 
-            <SidebarContent>
+            <SidebarContent className="gap-0 px-1">
                 <WorkspaceSwitcher
                     workspaces={workspaces}
                     activeWorkspaceId={activeWorkspace?.id}
                 />
-                <NavMain items={mainNavItems} />
+                <NavMain groups={navigationGroups} />
             </SidebarContent>
 
-            <SidebarFooter>
+            <SidebarFooter className="p-3">
                 <NavFooter items={footerNavItems} className="mt-auto" />
                 <NavUser />
             </SidebarFooter>

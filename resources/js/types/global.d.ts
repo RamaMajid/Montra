@@ -1,4 +1,5 @@
 import type { Auth } from '@/types/auth';
+import type { WorkspaceSummary } from '@/types/ui';
 
 declare module 'react' {
     interface InputHTMLAttributes<T> {
@@ -11,7 +12,10 @@ declare module '@inertiajs/core' {
         sharedPageProps: {
             name: string;
             auth: Auth;
+            workspaces: WorkspaceSummary[];
+            activeWorkspace: WorkspaceSummary | null;
             sidebarOpen: boolean;
+            invitation_url?: string | null;
             [key: string]: unknown;
         };
     }
