@@ -9,12 +9,14 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GoalContributionController;
 use App\Http\Controllers\ImportBatchController;
 use App\Http\Controllers\IntelligenceController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SavingsGoalController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\WorkspaceController;
 use App\Http\Controllers\WorkspaceInvitationController;
 use App\Http\Controllers\WorkspaceMemberController;
 use App\Http\Middleware\EnsureActiveWorkspace;
+use App\Services\ReportService;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'welcome')->name('home');
@@ -88,6 +90,10 @@ Route::middleware(['auth', 'verified', EnsureActiveWorkspace::class])->group(fun
     Route::post('savings-goals/{savings_goal}/contributions', [GoalContributionController::class, 'store'])->name('savings-goals.contributions.store');
     Route::put('savings-goals/{savings_goal}/contributions/{contribution}', [GoalContributionController::class, 'update'])->name('savings-goals.contributions.update');
     Route::delete('savings-goals/{savings_goal}/contributions/{contribution}', [GoalContributionController::class, 'destroy'])->name('savings-goals.contributions.destroy');
+
+    // Reports
+    Route::get('reports/{type}', [ReportController::class, 'show'])->whereIn('type', ReportService::TYPES)->name('reports.show');
+    Route::get('reports/{type}/export', [ReportController::class, 'export'])->whereIn('type', ReportService::TYPES)->middleware('throttle:20,1')->name('reports.export');
 
     // Intelligence
     Route::get('intelligence', [IntelligenceController::class, 'index'])->name('intelligence.index');
