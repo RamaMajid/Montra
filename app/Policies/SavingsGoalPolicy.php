@@ -44,9 +44,10 @@ class SavingsGoalPolicy
             return Response::denyAsNotFound();
         }
 
-        return in_array($membership->role, ['owner', 'admin', 'member'], true)
+        return in_array($membership->role, ['owner', 'admin'], true)
+            || ($membership->role === 'member' && (int) $savingsGoal->created_by === (int) $user->id)
             ? Response::allow()
-            : Response::deny('Viewers cannot edit savings goals.');
+            : Response::deny('You do not have permission to edit this savings goal.');
     }
 
     public function delete(User $user, SavingsGoal $savingsGoal): Response

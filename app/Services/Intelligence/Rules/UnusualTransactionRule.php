@@ -40,37 +40,49 @@ class UnusualTransactionRule implements InsightRule
     {
         $startStr = $startDate->format('Y-m-d');
         $endStr = $endDate->format('Y-m-d');
+        $isPgsql = DB::connection()->getDriverName() === 'pgsql';
 
-        // Historical baseline expense statistics across non-deleted expenses
-        $baseline = DB::table('transactions')
-            ->selectRaw('COUNT(*) as total_count, COALESCE(AVG(amount), 0) as avg_amount')
-            ->where('workspace_id', $workspace->id)
-            ->where('type', 'expense')
-            ->whereNull('deleted_at')
-            ->first();
+        $historyCountSql = '(SELECT COUNT(*) FROM transactions AS h WHERE h.workspace_id = transactions.workspace_id AND h.type = \'expense\' AND h.deleted_at IS NULL AND h.transaction_date < transactions.transaction_date)';
+        $historySumSql = $isPgsql
+            ? '(SELECT COALESCE(SUM(CAST(h.amount AS NUMERIC)), 0) FROM transactions AS h WHERE h.workspace_id = transactions.workspace_id AND h.type = \'expense\' AND h.deleted_at IS NULL AND h.transaction_date < transactions.transaction_date)'
+            : '(SELECT COALESCE(SUM(h.amount), 0) FROM transactions AS h WHERE h.workspace_id = transactions.workspace_id AND h.type = \'expense\' AND h.deleted_at IS NULL AND h.transaction_date < transactions.transaction_date)';
 
-        $count = (int) ($baseline->total_count ?? 0);
-        if ($count < self::MIN_TRANSACTION_COUNT) {
-            return [];
-        }
+        $avgSql = $isPgsql
+            ? "CAST(DIV({$historySumSql}, {$historyCountSql}) AS TEXT)"
+            : "CAST(({$historySumSql} / {$historyCountSql}) AS TEXT)";
 
-        $avgAmount = (int) round((float) ($baseline->avg_amount ?? 0));
-        $threshold = max(self::MIN_ABSOLUTE_AMOUNT, $avgAmount * self::MULTIPLIER);
+        $thresholdSql = $isPgsql
+            ? "CAST(GREATEST(?, DIV({$historySumSql} * ?, {$historyCountSql}) + 1) AS TEXT)"
+            : "CAST(MAX(?, (({$historySumSql} * ?) / {$historyCountSql}) + 1) AS TEXT)";
+
+        $candidateCastSql = $isPgsql ? 'CAST(transactions.amount AS NUMERIC)' : 'transactions.amount';
 
         $unusualTxs = Transaction::query()
+            ->select('transactions.*')
+            ->selectRaw("{$historyCountSql} AS historical_count")
+            ->selectRaw("{$avgSql} AS average_expense")
+            ->selectRaw("{$thresholdSql} AS threshold", [
+                self::MIN_ABSOLUTE_AMOUNT,
+                self::MULTIPLIER,
+            ])
             ->where('workspace_id', $workspace->id)
             ->where('type', 'expense')
             ->whereNull('deleted_at')
             ->whereBetween('transaction_date', [$startStr, $endStr])
-            ->where('amount', '>=', $threshold)
+            ->where('amount', '>=', self::MIN_ABSOLUTE_AMOUNT)
+            ->whereRaw("{$historyCountSql} >= ?", [self::MIN_TRANSACTION_COUNT])
+            ->whereRaw("{$candidateCastSql} * {$historyCountSql} > {$historySumSql} * ?", [self::MULTIPLIER])
             ->orderByDesc('amount')
+            ->orderByDesc('id')
             ->limit(5)
             ->get();
 
         $insights = [];
         foreach ($unusualTxs as $tx) {
-            $formattedAmount = 'Rp '.number_format((float) $tx->amount, 0, ',', '.');
-            $formattedAvg = 'Rp '.number_format($avgAmount, 0, ',', '.');
+            $avgExpenseStr = (string) $tx->getAttribute('average_expense');
+            $thresholdStr = (string) $tx->getAttribute('threshold');
+            $formattedAmount = $this->formatRupiah((string) $tx->amount);
+            $formattedAvg = $this->formatRupiah($avgExpenseStr);
             $txDesc = $tx->description ?: 'Pengeluaran';
 
             $fingerprint = hash('sha256', "{$workspace->id}:unusual_expense:{$tx->id}");
@@ -87,13 +99,18 @@ class UnusualTransactionRule implements InsightRule
                     'amount' => (string) $tx->amount,
                     'transaction_date' => $tx->transaction_date->format('Y-m-d'),
                     'description' => $tx->description,
-                    'average_expense' => (string) $avgAmount,
-                    'threshold' => (string) $threshold,
+                    'average_expense' => $avgExpenseStr,
+                    'threshold' => $thresholdStr,
                 ],
                 'fingerprint' => $fingerprint,
             ];
         }
 
         return $insights;
+    }
+
+    private function formatRupiah(string $amount): string
+    {
+        return 'Rp '.(preg_replace('/\B(?=(\d{3})+(?!\d))/', '.', $amount) ?? $amount);
     }
 }

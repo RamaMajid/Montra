@@ -55,7 +55,7 @@ class SavingsProgressRule implements InsightRule
             if ($isCompleted || $percentage >= 100) {
                 $ruleKey = 'savings_goal_completed';
                 $title = "Target Tabungan Tercapai: {$goal->name}";
-                $description = "Selamat! Target tabungan {$goal->name} telah tercapai 100% sebesar Rp ".number_format((float) $goal->target_amount, 0, ',', '.').'.';
+                $description = "Selamat! Target tabungan {$goal->name} telah tercapai 100% sebesar ".$this->formatRupiah((string) $goal->target_amount).'.';
                 $fingerprint = hash('sha256', "{$workspace->id}:savings_goal_completed:{$goal->id}");
 
                 $insights[] = [
@@ -130,5 +130,10 @@ class SavingsProgressRule implements InsightRule
         }
 
         return $insights;
+    }
+
+    private function formatRupiah(string $amount): string
+    {
+        return 'Rp '.(preg_replace('/\B(?=(\d{3})+(?!\d))/', '.', $amount) ?? $amount);
     }
 }

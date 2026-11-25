@@ -127,6 +127,28 @@ it('updates a savings goal', function () {
         ->and($goal->fresh()->target_amount)->toBe(8000000);
 });
 
+it('synchronizes goal status when its target changes', function (string $initialStatus, int $initialTarget, int $target, string $expectedStatus) {
+    [$user, $workspace] = savingsWorkspace();
+    $goal = SavingsGoal::factory()->for($workspace)->create([
+        'created_by' => $user->id,
+        'target_amount' => $initialTarget,
+        'status' => $initialStatus,
+    ]);
+    GoalContribution::factory()->for($goal)->create(['amount' => 750000, 'created_by' => $user->id]);
+
+    $this->actingAs($user)->withSession(['active_workspace_id' => $workspace->id])
+        ->putJson("/savings-goals/{$goal->id}", ['name' => $goal->name, 'target_amount' => $target])
+        ->assertOk()
+        ->assertJsonPath('goal.status', $expectedStatus)
+        ->assertJsonPath('goal.progress.status', $expectedStatus);
+
+    $this->assertDatabaseHas('savings_goals', ['id' => $goal->id, 'target_amount' => $target, 'status' => $expectedStatus]);
+})->with([
+    'active to completed' => ['active', 1000000, 500000, 'completed'],
+    'completed to active' => ['completed', 500000, 1000000, 'active'],
+    'archived remains archived' => ['archived', 1000000, 500000, 'archived'],
+]);
+
 it('archives a savings goal', function () {
     [$user, $workspace] = savingsWorkspace();
     $goal = SavingsGoal::factory()->for($workspace)->create([
@@ -303,6 +325,37 @@ it('enforces role authorization on goals and contributions', function () {
         ->postJson("/savings-goals/{$ownGoal->id}/archive")
         ->assertOk();
 });
+
+it('enforces goal editing permissions for each workspace role', function (string $role, bool $ownGoal, bool $allowed) {
+    [$user, $workspace] = savingsWorkspace($role);
+    $creator = $ownGoal ? $user : User::factory()->create();
+    $goal = SavingsGoal::factory()->for($workspace)->create(['created_by' => $creator->id]);
+
+    $this->actingAs($user)->withSession(['active_workspace_id' => $workspace->id])
+        ->getJson("/savings-goals/{$goal->id}")
+        ->assertOk()
+        ->assertJsonPath('goal.can_edit', $allowed);
+
+    $response = $this->putJson("/savings-goals/{$goal->id}", ['name' => 'Updated', 'target_amount' => 1000000]);
+    if ($allowed) {
+        $response->assertOk()->assertJsonPath('goal.can_edit', true);
+    } else {
+        $response->assertForbidden();
+    }
+
+    $this->assertDatabaseHas('savings_goals', [
+        'id' => $goal->id,
+        'name' => $allowed ? 'Updated' : $goal->name,
+        'created_by' => $creator->id,
+    ]);
+})->with([
+    'owner edits another goal' => ['owner', false, true],
+    'admin edits another goal' => ['admin', false, true],
+    'member edits own goal' => ['member', true, true],
+    'member cannot edit another goal' => ['member', false, false],
+    'viewer cannot edit own goal' => ['viewer', true, false],
+    'viewer cannot edit another goal' => ['viewer', false, false],
+]);
 
 it('handles large integer monetary amounts safely', function () {
     [$user, $workspace] = savingsWorkspace();

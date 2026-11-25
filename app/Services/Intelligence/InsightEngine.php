@@ -75,43 +75,30 @@ class InsightEngine
         }
 
         if (! empty($generated)) {
-            DB::transaction(function () use ($workspace, $generated, $now): void {
-                $fingerprints = array_column($generated, 'fingerprint');
-                $existingFingerprints = FinancialInsight::query()
-                    ->where('workspace_id', $workspace->id)
-                    ->whereIn('fingerprint', $fingerprints)
-                    ->pluck('fingerprint')
-                    ->all();
+            $records = [];
+            foreach ($generated as $item) {
+                $records[$item['fingerprint']] = [
+                    'workspace_id' => $workspace->id,
+                    'rule_key' => $item['rule_key'],
+                    'title' => $item['title'],
+                    'description' => $item['description'],
+                    'severity' => $item['severity'],
+                    'period_start' => $item['period_start'],
+                    'period_end' => $item['period_end'],
+                    'supporting_data' => json_encode($item['supporting_data'], JSON_THROW_ON_ERROR),
+                    'is_read' => false,
+                    'fingerprint' => $item['fingerprint'],
+                    'generated_at' => $now->toDateTimeString(),
+                    'created_at' => $now->toDateTimeString(),
+                    'updated_at' => $now->toDateTimeString(),
+                ];
+            }
 
-                $existingSet = array_flip($existingFingerprints);
-                $recordsToInsert = [];
-
-                foreach ($generated as $item) {
-                    if (isset($existingSet[$item['fingerprint']])) {
-                        continue;
-                    }
-
-                    $recordsToInsert[] = [
-                        'workspace_id' => $workspace->id,
-                        'rule_key' => $item['rule_key'],
-                        'title' => $item['title'],
-                        'description' => $item['description'],
-                        'severity' => $item['severity'],
-                        'period_start' => $item['period_start'],
-                        'period_end' => $item['period_end'],
-                        'supporting_data' => json_encode($item['supporting_data']),
-                        'is_read' => false,
-                        'fingerprint' => $item['fingerprint'],
-                        'generated_at' => $now->toDateTimeString(),
-                        'created_at' => $now->toDateTimeString(),
-                        'updated_at' => $now->toDateTimeString(),
-                    ];
-                }
-
-                if (! empty($recordsToInsert)) {
-                    DB::table('financial_insights')->insert($recordsToInsert);
-                }
-            });
+            ksort($records);
+            DB::table('financial_insights')->upsert(array_values($records), ['workspace_id', 'fingerprint'], [
+                'rule_key', 'title', 'description', 'severity', 'period_start', 'period_end',
+                'supporting_data', 'generated_at', 'updated_at',
+            ]);
         }
 
         return $this->getInsights($workspace);
@@ -154,7 +141,9 @@ class InsightEngine
 
     public function markAllAsRead(User $user, Workspace $workspace): int
     {
-        Gate::forUser($user)->authorize('view', $workspace);
+        Gate::forUser($user)->authorize('update', (new FinancialInsight([
+            'workspace_id' => $workspace->id,
+        ]))->setRelation('workspace', $workspace));
 
         return FinancialInsight::query()
             ->where('workspace_id', $workspace->id)

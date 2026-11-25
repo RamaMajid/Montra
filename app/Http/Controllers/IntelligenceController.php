@@ -27,7 +27,7 @@ class IntelligenceController extends Controller
         $workspace = $this->activeWorkspace($request);
 
         // Always run idempotent evaluation to ensure fresh events/thresholds are captured
-        $engine->evaluateWorkspace($workspace);
+        $allInsights = $engine->evaluateWorkspace($workspace);
 
         $filters = [
             'rule_key' => $request->query('rule_key'),
@@ -35,8 +35,8 @@ class IntelligenceController extends Controller
             'is_read' => $request->query('is_read'),
         ];
 
-        $insights = $engine->getInsights($workspace, $filters);
-        $allInsights = $engine->getInsights($workspace);
+        $hasFilters = ! empty(array_filter($filters, fn ($value): bool => $value !== null && $value !== ''));
+        $insights = $hasFilters ? $engine->getInsights($workspace, $filters) : $allInsights;
 
         $unreadCount = $allInsights->where('is_read', false)->count();
 

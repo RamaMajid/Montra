@@ -179,20 +179,20 @@ it('evaluates unusual transactions and requires minimum baseline', function () {
     [$user, $workspace] = intelligenceWorkspace();
     $cat = Category::factory()->for($workspace)->expense()->create();
 
-    // Baseline: only 2 transactions (< 3 required baseline) -> should not trigger
-    intelTransaction($workspace, 'expense', 100000, '2026-11-05', $cat);
-    intelTransaction($workspace, 'expense', 100000, '2026-11-06', $cat);
+    // Baseline: only 2 historical transactions prior to current month (< 3 required baseline) -> should not trigger
+    intelTransaction($workspace, 'expense', 100000, '2026-10-05', $cat);
+    intelTransaction($workspace, 'expense', 100000, '2026-10-06', $cat);
     intelTransaction($workspace, 'expense', 2000000, '2026-11-10', $cat);
 
     $resNoBase = $this->actingAs($user)->withSession(['active_workspace_id' => $workspace->id])
         ->getJson('/intelligence?rule_key=unusual_expense');
     $resNoBase->assertOk()->assertJsonCount(0, 'insights');
 
-    // Add 3rd historical baseline expense of 100.000
-    // Total expenses: 100k, 100k, 100k, 2M. Count = 4 (>= 3).
-    // Average expense = 575.000, threshold = max(500k, 575k * 3 = 1.725.000).
-    // 2.000.000 >= 1.725.000 -> triggers unusual_expense!
-    intelTransaction($workspace, 'expense', 100000, '2026-11-07', $cat);
+    // Add 3rd historical baseline expense of 100.000 in previous month
+    // Historical baseline: 100k, 100k, 100k. Count = 3 (>= 3).
+    // Average expense = 100.000, threshold = max(500k, 100k * 3 = 300k) = 500.000.
+    // Current expense 2.000.000 >= 500.000 and > 3x historical average -> triggers unusual_expense!
+    intelTransaction($workspace, 'expense', 100000, '2026-10-07', $cat);
 
     $resTrigger = $this->actingAs($user)->withSession(['active_workspace_id' => $workspace->id])
         ->getJson('/intelligence?rule_key=unusual_expense');
@@ -200,7 +200,9 @@ it('evaluates unusual transactions and requires minimum baseline', function () {
     $resTrigger->assertOk()
         ->assertJsonCount(1, 'insights')
         ->assertJsonPath('insights.0.rule_key', 'unusual_expense')
-        ->assertJsonPath('insights.0.severity', 'warning');
+        ->assertJsonPath('insights.0.severity', 'warning')
+        ->assertJsonPath('insights.0.supporting_data.average_expense', '100000')
+        ->assertJsonPath('insights.0.supporting_data.threshold', '500000');
 });
 
 it('prevents duplicate insights across multiple evaluations', function () {
