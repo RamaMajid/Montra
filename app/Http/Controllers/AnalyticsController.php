@@ -7,10 +7,28 @@ use App\Models\Workspace;
 use App\Services\FinancialAnalyticsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Response;
+use Inertia\Inertia;
+use Inertia\Response as InertiaResponse;
 
 class AnalyticsController extends Controller
 {
     public function __invoke(DashboardFilterRequest $request, FinancialAnalyticsService $analytics): JsonResponse
+    {
+        return Response::json($this->payload($request, $analytics));
+    }
+
+    public function page(DashboardFilterRequest $request, FinancialAnalyticsService $analytics): InertiaResponse
+    {
+        return Inertia::render('analytics/index', [
+            ...$this->payload($request, $analytics),
+            'filters' => $request->validated(),
+        ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function payload(DashboardFilterRequest $request, FinancialAnalyticsService $analytics): array
     {
         $workspace = $this->workspace($request);
         $period = $analytics->resolvePeriod($request->validated());
@@ -18,7 +36,7 @@ class AnalyticsController extends Controller
         $accountBalances = $analytics->getAccountBalances($workspace);
         $trends = $analytics->getTrends($workspace, $period['start_date'], $period['end_date']);
 
-        return Response::json([
+        return [
             'period' => [
                 'type' => $period['period'],
                 'start_date' => $period['start_date']->format('Y-m-d'),
@@ -32,7 +50,7 @@ class AnalyticsController extends Controller
             'account_distribution' => $analytics->getAccountDistribution($workspace, $accountBalances),
             'budget' => $analytics->getBudgetOverview($workspace, $period['start_date'], $period['end_date']),
             'recent_transactions' => $analytics->getRecentTransactions($workspace),
-        ]);
+        ];
     }
 
     private function workspace(DashboardFilterRequest $request): Workspace

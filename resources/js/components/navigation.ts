@@ -11,6 +11,7 @@ import {
     Settings,
     Upload,
 } from 'lucide-react';
+import analytics from '@/routes/analytics';
 import type { NavGroup } from '@/types';
 
 export const navigationGroups: NavGroup[] = [
@@ -48,9 +49,8 @@ export const navigationGroups: NavGroup[] = [
         items: [
             {
                 title: 'Analytics',
+                href: analytics.page.url(),
                 icon: BarChart3,
-                disabled: true,
-                hint: 'Frontend Phase 6',
             },
             {
                 title: 'Financial intelligence',

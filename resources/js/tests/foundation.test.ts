@@ -51,12 +51,12 @@ describe('Phase 0 shell navigation and shared state primitives', () => {
             'Accounts',
             'Categories',
             'Budgets',
+            'Analytics',
             'Workspace',
             'Settings',
         ]);
         expect(deferredTitles).toEqual([
             'Savings goals',
-            'Analytics',
             'Financial intelligence',
             'Reports',
         ]);

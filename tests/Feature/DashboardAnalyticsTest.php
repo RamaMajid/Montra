@@ -286,6 +286,81 @@ it('does not honor a foreign workspace id in the session', function () {
         ->assertJsonPath('summary.total_income', '0');
 });
 
+it('passes stable analytics data contract to analytics inertia response', function () {
+    [$user, $workspace] = analyticsWorkspace();
+    $viewer = User::factory()->create(['email_verified_at' => now()]);
+    WorkspaceMember::factory()->for($workspace)->for($viewer)->create(['role' => 'viewer']);
+    $outsider = User::factory()->create(['email_verified_at' => now()]);
+    $secondWorkspace = Workspace::factory()->family()->for($user, 'owner')->create();
+    WorkspaceMember::factory()->owner()->for($secondWorkspace)->for($user)->create();
+
+    $account = Account::factory()->for($workspace)->create(['initial_balance' => 100000, 'is_active' => true]);
+    $secondAccount = Account::factory()->for($secondWorkspace)->create();
+    $income = Category::factory()->for($workspace)->income()->create();
+    $expense = Category::factory()->for($workspace)->expense()->create();
+    $secondIncome = Category::factory()->for($secondWorkspace)->income()->create();
+
+    analyticsTransaction($workspace, $account, $income, 'income', 100000, '2026-11-01');
+    analyticsTransaction($workspace, $account, $expense, 'expense', 25000, '2026-11-03');
+    analyticsTransaction($workspace, $account, $expense, 'expense', 40000, '2026-10-10');
+    analyticsTransaction($secondWorkspace, $secondAccount, $secondIncome, 'income', 900000, '2026-11-01');
+
+    $this->get('/analytics/page')->assertRedirect('/login');
+
+    $json = $this->actingAs($viewer)
+        ->withSession(['active_workspace_id' => $workspace->id])
+        ->getJson('/analytics?period=custom&date_from=2026-11-01&date_to=2026-11-03')
+        ->assertOk()
+        ->json();
+
+    $this->actingAs($viewer)
+        ->withSession(['active_workspace_id' => $workspace->id])
+        ->get('/analytics/page?period=custom&date_from=2026-11-01&date_to=2026-11-03')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('analytics/index', false)
+            ->where('filters.period', 'custom')
+            ->where('filters.date_from', '2026-11-01')
+            ->where('filters.date_to', '2026-11-03')
+            ->where('period', $json['period'])
+            ->where('summary', $json['summary'])
+            ->where('trends', $json['trends'])
+            ->where('category_trends', $json['category_trends'])
+            ->where('savings_rate_trends', $json['savings_rate_trends'])
+            ->where('expense_breakdown', $json['expense_breakdown'])
+            ->where('account_distribution', $json['account_distribution'])
+            ->where('budget', $json['budget'])
+            ->where('recent_transactions', $json['recent_transactions'])
+        );
+
+    $this->actingAs($user)
+        ->withSession(['active_workspace_id' => $workspace->id])
+        ->get('/analytics/page?period=previous_month&workspace_id='.$secondWorkspace->id)
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('analytics/index', false)
+            ->where('filters.period', 'previous_month')
+            ->where('period.type', 'previous_month')
+            ->where('summary.total_income', '0')
+            ->where('summary.total_expense', '40000')
+            ->where('summary.savings_rate', null)
+        );
+
+    $this->actingAs($outsider)
+        ->withSession(['active_workspace_id' => $workspace->id])
+        ->get('/analytics/page?period=current_month')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('summary.total_income', '0')
+            ->where('summary.savings_rate', null)
+        );
+
+    $this->actingAs($user)
+        ->withSession(['active_workspace_id' => $workspace->id])
+        ->get('/analytics/page?period=invalid')
+        ->assertSessionHasErrors('period');
+});
+
 it('passes stable analytics data contract to dashboard inertia response', function () {
     [$user, $workspace] = analyticsWorkspace();
 

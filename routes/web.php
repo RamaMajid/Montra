@@ -24,6 +24,7 @@ Route::inertia('/', 'welcome')->name('home');
 Route::middleware(['auth', 'verified', EnsureActiveWorkspace::class])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
     Route::get('analytics', AnalyticsController::class)->name('analytics');
+    Route::get('analytics/page', [AnalyticsController::class, 'page'])->name('analytics.page');
 
     // Workspaces
     Route::get('workspaces', [WorkspaceController::class, 'index'])->name('workspaces.index');
